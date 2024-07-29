@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Product</title>
+    <style>
+        .form-container {
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 500px;
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-container label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #555;
+        }
+
+        .form-container input[type="text"],
+        .form-container input[type="number"],
+        .form-container input[type="submit"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        .form-container input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-container input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        img {
+            height: 200px;
+            width: 200px;
+        }
+
+        #parent {
+            display: flex;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="form-container">
+        <h2>Add Product</h2>
+        <form id="form">
+            <label for="image">Product Image</label>
+            <input value="" type="text" id="image" name="image" placeholder="Enter image URL">
+
+            <label for="productname">Product Name</label>
+            <input type="text" id="productname" name="productname" placeholder="Enter product name">
+
+            <label for="description">Product Description</label>
+            <input type="text" id="description" name="description" placeholder="Enter product description">
+
+            <label for="productprice">Product Price</label>
+            <input type="number" id="productprice" name="productprice" placeholder="Enter product price">
+
+            <select name="CatgoryId" id="">
+                <option value=""selected disabled>---select Category</option>
+                <% cat.map((val)=>{%>
+                    <option value="<%= val._id%>"><%= val.name%></option>
+              <%  })%>
+            </select>
+
+            <select name="subCategoryId" id="">
+                <option value=""selected disabled>---select SubCategory</option>
+                <% subcat.map((val)=>{%>
+                    <option value="<%= val._id%>"><%= val.name%></option>
+              <%  })%>
+            </select>
+
+            <select name="extraCategoryId" id="">
+                <option value=""selected disabled>---select extraCategory</option>
+                <% extracat.map((val)=>{%>
+                    <option value="<%= val._id%>"><%= val.name%></option>
+              <%  })%>
+            </select>
+            <input type="submit" value="Submit" id="type">
+        </form>
+    </div>
+
+    <div id="parent"></div>
+
+    <script>
+        let id = null; 
+
+        let Add = (product) => {
+            fetch('/product/addProduct', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+            })
+                .then(() => get())
+        };
+
+        let Update = (product)=> {
+            fetch(`/product/update/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+            })
+                .then(() => get())
+        };
+
+        document.getElementById('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            let product = {
+                image: document.querySelector('#image').value,
+                productname: document.querySelector('#productname').value,
+                description: document.querySelector('#description').value,
+                productprice: document.querySelector('#productprice').value,
+            }
+            console.log(product);
+            let type = document.querySelector("#type").value;
+            console.log(type);
+            if(type == "Submit"){
+                Add(product);
+            }else{
+                Update(product);
+            }
+        })
+
+
+        let uimaker = (data) => {
+            document.querySelector('#parent').innerHTML = '';
+            data.map((ele) => {
+                let div = document.createElement('div');
+                let img = document.createElement('img');
+                img.src = ele.image;
+                let name = document.createElement('h2');
+                name.innerHTML = ele.productname;
+                let desc = document.createElement('p');
+                desc.innerHTML = ele.description;
+                let price = document.createElement('p');
+                price.innerHTML = ele.productprice;
+
+                let btn1 = document.createElement('button');
+                btn1.innerHTML = "Delete"
+                btn1.addEventListener("click", () => deleteData(ele._id))
+
+                let btn2 = document.createElement('button');
+                btn2.innerHTML = "Edit"
+                btn2.addEventListener("click", () => editData(ele));
+
+                div.append(img, name, desc, price, btn1, btn2);
+                document.querySelector('#parent').append(div);
+            })
+        }
+
+        let editData = (data) => {
+            document.querySelector('#image').value=data.image
+            document.querySelector('#productname').value=data.productname
+            document.querySelector('#description').value=data.description
+            document.querySelector('#productprice').value=data.productprice
+            document.querySelector('#type').value= 'Update'
+            id = data._id
+            console.log(_id);
+        }
+
+        let deleteData = (id) => {
+            console.log("delete",id);
+            fetch(`/product/delete/${id}`, {
+                method: 'DELETE'
+            }).then(() => get())
+
+            setTimeout(()=>{
+                window.location.reload();
+            },500)
+        }
+
+        let get = async () => {
+            let req = await fetch('/product/data');
+            let res = await req.json();
+            uimaker(res);
+        }
+
+        get();
+
+
+    </script>
+</body>
+
+</html>
